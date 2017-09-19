@@ -30,13 +30,12 @@ body {
 
 #highlight {
 	position: absolute;
-	left: 24;
-	top: 0;
 	width: 48px;
 	height: 48px;
 	background-color: #ffffff;
 	mix-blend-mode: screen;
 	opacity: 0.6;
+	visibility: hidden;
 }
 
 .asset {
@@ -58,6 +57,7 @@ var input = {
 	modes: { DISABLE: 0, FROM: 1, TO: 2 },
 	mode: 1,
 	from: { x: 0, y: 0 },
+	to: { x:0, y: 0 }
 };
 
 
@@ -100,14 +100,14 @@ var game = {
 	init: function() {
 	
 		game.fields = [
-			[ X, B, X, BQ, X, B, X, B ],
+			[ X, B, X, B, X, B, X, B ],
 			[ B, X, B, X, B, X, B, X ],
 			[ X, B, X, B, X, B, X, B ],
 			[ E, X, E, X, E, X, E, X ],
 			[ X, E, X, E, X, E, X, E ],
 			[ W, X, W, X, W, X, W, X ],
 			[ X, W, X, W, X, W, X, W ],
-			[ W, X, W, WQ, W, X, W, X ]
+			[ W, X, W, X, W, X, W, X ]
 			];
 	},
 	
@@ -214,20 +214,28 @@ var game = {
 };
 
 function click(ev) {
+	
 	var x, y;
-	x = ev.clientX;
-	y = ev.clientY;
-	x /= 48;
-	y /= 48;
-	console.log(Math.floor(x) + " " + Math.floor(y));
+	var highlight = document.getElementById("highlight");
+	x = Math.floor(ev.clientX / 48);
+	y = Math.floor(ev.clientY / 48);
+	console.log(x + " " + y);
 
 	if(input.mode == input.modes.FROM) {
-		//if(game.fields[y][x] == 
+		if(belongs_to(game.fields[y][x]) == W) {
+			input.from = { x: x, y: y };
+			input.mode = input.modes.TO;
+			highlight.style.left = x * 48;
+			highlight.style.top = y * 48;
+			highlight.style.visibility = "visible";
+			
+		};
 		
-	} else if(input_mode == input.modes.TO) {
+	} else if(input.mode == input.modes.TO) {
 		
-		
-		
+			highlight.style.visibility = "hidden";
+			input.to = { x: x, y: y };
+			input.mode = input.modes.FROM;
 	};
 	
 };
@@ -237,6 +245,9 @@ function click(ev) {
 function init() {
 	var e_overlay = document.getElementById("overlay");
 	e_overlay.addEventListener("click", click);
+	
+	game.init();
+	game.draw_fields();
 };
 
 
