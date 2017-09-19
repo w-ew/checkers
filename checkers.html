@@ -102,7 +102,7 @@ var game = {
 		game.fields = [
 			[ X, B, X, B, X, B, X, B ],
 			[ B, X, B, X, B, X, B, X ],
-			[ X, B, X, B, X, B, X, B ],
+			[ X, B ,X, B, X, B, X, B ],
 			[ E, X, E, X, E, X, E, X ],
 			[ X, E, X, E, X, E, X, E ],
 			[ W, X, W, X, W, X, W, X ],
@@ -150,11 +150,11 @@ var game = {
 				else return false;
 			} else
 			if(d == 2) {
-				if(
+				if(belongs_to(
 					this.fields
 						[(hop.to.y + hop.from.y) / 2]
-						[(hop.to.x + hop.from.x) / 2] 
-					== -player
+						[(hop.to.x + hop.from.x) / 2] )
+					== foe_of(player)
 				)
 				return true;		/* hit */
 				else return false;	/* no hit */
@@ -163,9 +163,39 @@ var game = {
 			return false;	/* moving to far */
 		} else { /* queen */
 			
+			var dir = { x: 0, y: 0 };
 			
-			
+			if(hop.from.x < hop.to.x) dir.x = 1; else dir.x = -1;
+			if(hop.from.y < hop.to.y) dir.y = 1; else dir.y = -1;
+						
+			for(var pos = { x: hop.from.x + dir.x, y: hop.from.y + dir.y };
+				pos.x != hop.to.x;
+				[ pos.x, pos.y ] = [ pos.x + dir.x, pos.y + dir.y]) 
+			{
+				if(this.fields[pos.y][pos.x] == E) continue;
+				if(belongs_to(this.fields[pos.y][pos.x]) == player) return false;		/* cannot jump over own piece */
+				if(belongs_to(this.fields[pos.y][pos.x]) == foe_of(player)) {
+					if(hop.to.x == pos.x + dir.x) return true;	/* hop ends just after other player's piece */
+					else return false;
+				};
+			};
+			return true;
 		};
+	},
+	
+	hit_hop: function(hop) {
+		var dir = { x: 0, y: 0 };
+
+		if(hop.from.x < hop.to.x) dir.x = 1; else dir.x = -1;
+		if(hop.from.y < hop.to.y) dir.y = 1; else dir.y = -1;		
+		
+		for(var pos = { x: hop.from.x, y: hop.from.y };
+			pos.x != hop.to.x;
+			[ pos.x, pos.y ] = [ pos.x + dir.x, pos.y + dir.y]) 
+		{
+			this.fields[pos.y][pos.x] = E;
+		};
+
 	},
 	
 	is_valid_move: function(move) {
@@ -184,6 +214,7 @@ var game = {
 
 		for(var y = 0; y < 8; y++) {
 			for(var x = 0; x < 8; x++) {
+				ctx.clearRect(x * 48, y * 48, 48, 48);
 				switch(this.fields[y][x]) {
 					case W:
 						ctx.drawImage(w_checker_img, x * 48, y * 48, 48,48);
@@ -199,8 +230,8 @@ var game = {
 						break;
 					case E:
 					case X:
-						ctx.clearRect(x * 48, y * 48, 48, 48);
-					
+
+						break;
 					default:
 				};				
 			};
@@ -210,10 +241,17 @@ var game = {
 	make_hop: function(player, hop) {
 		if(game.is_valid_hop(player, hop)) {
 			this.fields[hop.to.y][hop.to.x] = this.fields[hop.from.y][hop.from.x];
-			this.fields[hop.from.y][hop.from.x] = E;			
+			this.fields[hop.from.y][hop.from.x] = E;
+			game.hit_hop(hop);
 		};
-	}	
-	
+	},
+		
+	promote: function() {
+		for(var x=0; x<8; x++) {
+			if(belongs_to(this.fields[0][x]) == W) this.fields[0][x] = WQ;
+			if(belongs_to(this.fields[7][x]) == B) this.fields[7][x] = BQ;
+		};
+	}
 	
 		
 };
@@ -243,6 +281,7 @@ function click(ev) {
 			input.mode = input.modes.FROM;
 			
 			game.make_hop(W, { from: input.from, to: input.to });
+			game.promote();
 			game.draw_fields();
 			
 	};
