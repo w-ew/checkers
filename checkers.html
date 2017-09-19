@@ -112,7 +112,7 @@ var game = {
 	},
 	
 	/* test if a hop is possible */
-	is_valid_hop: function(hop, player) {
+	is_valid_hop: function(player, hop) {
 		
 		var q = false;
 		
@@ -197,19 +197,24 @@ var game = {
 					case BQ:
 						ctx.drawImage(b_queen_img, x * 48, y * 48, 48,48);		
 						break;
-						
+					case E:
+					case X:
+						ctx.clearRect(x * 48, y * 48, 48, 48);
+					
 					default:
 				};				
 			};
 		};
-			
-			
-
-		this.fields
-		
-		
+	},
 	
-	}
+	make_hop: function(player, hop) {
+		if(game.is_valid_hop(player, hop)) {
+			this.fields[hop.to.y][hop.to.x] = this.fields[hop.from.y][hop.from.x];
+			this.fields[hop.from.y][hop.from.x] = E;			
+		};
+	}	
+	
+	
 		
 };
 
@@ -236,6 +241,10 @@ function click(ev) {
 			highlight.style.visibility = "hidden";
 			input.to = { x: x, y: y };
 			input.mode = input.modes.FROM;
+			
+			game.make_hop(W, { from: input.from, to: input.to });
+			game.draw_fields();
+			
 	};
 };
 
