@@ -79,7 +79,7 @@ function get_successors(x, y) { //iterate through every square and find all posi
 	return successors;
 }
 
-function possible_moves(board) { // itarate through every square and find all successors for black men
+function possible_moves(board) { //itarate through every square and find all successors for black men
 	var successors = [];
 	for(var y = 0; y < 8; y++) {
 		for(var x = 0; x < 8; x++) {
