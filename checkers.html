@@ -50,6 +50,16 @@ body {
 	height: 384px;
 }	
 
+#bottom_bar {
+	display: block;
+	position: absolute;
+	left: 0px;
+	top: 384px;
+	width: 384px;
+	margin-top: 20px;
+	
+}
+
 </style>
 <script type="text/javascript">
 
@@ -301,7 +311,7 @@ var game = {
 				y2 -= 1;
 			};
 		};
-		return {hits, moves};
+		return { hits: hits, moves: moves };
 	},
 
 	possible_hops: function() {
@@ -388,25 +398,6 @@ var game = {
 
 	
 		
-};
-
-var turn = {
-	player: 0,
-	hops: [],
-};
-
-var turn_generator = {
-	game: undefined,
-	state: 0,
-	turn: undefined,
-
-	start(game, player) {
-		this.game = game;
-		this.turn = { player: player, hops: [] };
-	},
-	
-	
-	
 };
 
 
@@ -513,7 +504,12 @@ function init() {
 };
 
 
-
+function exit_dialog() {
+	
+	if(confirm("Are you sure you want to leave this game?")) {
+		window.location.href = "./start.html";
+	};
+};
 
 
 </script>
@@ -528,6 +524,11 @@ function init() {
 <img id="b_queen" class="asset" src="black_queen.png">
 <img id="w_checker" class="asset" src="checker.png">
 <img id="w_queen" class="asset" src="queen.png">
-
 <div id="overlay"></div>
+<div id="bottom_bar">
+<form id="button">
+	<center><input type="button" value="EXIT" onclick="exit_dialog();"/></center>
+</form>
+
+</div>
 </body></html>
