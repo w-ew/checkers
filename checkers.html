@@ -361,19 +361,28 @@ var game = {
 	},
 	
 	fork: function(player, hop) {
-		game = {
+		var r = {
 			fields: [],
+			first_hop: this.first_hop,
+			hit_pos: this.hit_pos,
+			player: this.player,
 			/* not cloning init */
 			is_valid_hop: this.is_valid_hop,
 			hit_hop: this.hit_hop,
+			possible_hops_from: this.possible_hops_from,
 			possible_hops: this.possible_hops,
 			promote: this.promote,
 			make_hop: this.make_hop,
 			fork: this.fork
 		};
 
-		
-		return game;
+		for(y = 0; y < 8; y++) {
+			r.fields.push([]);
+			for(x = 0; x < 8; x++) {
+				r.fields[y][x] = this.fields[y][x];
+			};
+		};
+		return r;
 	}
 		
 
@@ -438,8 +447,9 @@ function click(ev) {
 			draw_hops(r);
 			
 			if(r.length == 0) {
-				window.alert(((foe_of(game.player)==W)?"White":"Black") + " wins!");
-			
+				setTimeout(function() {
+					window.alert(((foe_of(game.player)==W)?"White":"Black") + " wins!");
+				}, 10);			
 			};
 			
 		};
