@@ -68,6 +68,10 @@ var WQ = 2;
 var B = -1;
 var BQ = -2;
 
+var HOP_HIT = 1;
+var HOP_MOVE = 2;
+	
+	
 function foe_of(player) {
 	if(player == B) return W;
 	if(player == W) return B;
@@ -89,13 +93,39 @@ function direction(player) {
 function is_queen(field) {
 	if((field == BQ) || (field == WQ)) return true;
 	else return false;
-	
-	
+};
+
+function new_hop(hop) {
+	return {
+		from: {
+			x: hop.from.x,
+			y: hop.from.y
+		},
+		to: {
+			x: hop.to.x,
+			y: hop.to.y			
+		}		
+	};
+};
+
+function find_hop(hop, arr) {
+	for(i in arr) {
+		if(
+			(arr[i].from.x == hop.from.x) &&
+			(arr[i].from.y == hop.from.y) &&
+			(arr[i].to.x == hop.to.x) &&
+			(arr[i].to.y == hop.to.y)
+		) return arr[i];		
+	};
+	return 0;
 };
 
 var game = {
 	
 	fields: undefined,
+	first_hop: true,
+	hit_pos: undefined,
+	player: 0,
 
 	init: function() {
 	
@@ -109,11 +139,14 @@ var game = {
 			[ X, W, X, W, X, W, X, W ],
 			[ W, X, W, X, W, X, W, X ]
 			];
+			
+			this.player = W;
+			this.hit_pos = { x: undefined, y: undefined };
 	},
 	
 	/* test if a hop is possible */
-	is_valid_hop: function(player, hop) {
-		
+
+	is_valid_hop: function(player, hop) {		
 		var q = false;
 		
 		/* check if move does not fall off the board */
@@ -143,10 +176,12 @@ var game = {
 		};
 		
 		var d = _distance(hop);
+		if(!d) return false;
+		
 		if(!q) {
 			if(d == 1) {
 				/* can only move forward */
-				if(hop.to.y - hop.from.y == direction(player)) return true;
+				if(hop.to.y - hop.from.y == direction(player)) return HOP_MOVE;
 				else return false;
 			} else
 			if(d == 2) {
@@ -156,7 +191,7 @@ var game = {
 						[(hop.to.x + hop.from.x) / 2] )
 					== foe_of(player)
 				)
-				return true;		/* hit */
+				return HOP_HIT;		/* hit */
 				else return false;	/* no hit */
 				
 			} else 
@@ -175,11 +210,13 @@ var game = {
 				if(this.fields[pos.y][pos.x] == E) continue;
 				if(belongs_to(this.fields[pos.y][pos.x]) == player) return false;		/* cannot jump over own piece */
 				if(belongs_to(this.fields[pos.y][pos.x]) == foe_of(player)) {
-					if(hop.to.x == pos.x + dir.x) return true;	/* hop ends just after other player's piece */
+					if(hop.to.x == pos.x + dir.x)
+						return HOP_HIT;	/* hop ends just after other player's piece */
 					else return false;
 				};
 			};
-			return true;
+			/* only empty fields between queen and target */
+			return HOP_MOVE;	/* queen moves without a hit */
 		};
 	},
 	
@@ -189,73 +226,184 @@ var game = {
 		if(hop.from.x < hop.to.x) dir.x = 1; else dir.x = -1;
 		if(hop.from.y < hop.to.y) dir.y = 1; else dir.y = -1;		
 		
-		for(var pos = { x: hop.from.x, y: hop.from.y };
+		for(var pos = { x: hop.from.x + dir.x, y: hop.from.y + dir.y };
 			pos.x != hop.to.x;
 			[ pos.x, pos.y ] = [ pos.x + dir.x, pos.y + dir.y]) 
 		{
-			this.fields[pos.y][pos.x] = E;
-		};
-
-	},
-	
-	is_valid_move: function(move) {
-		
-		;
-		
-	},
-		
-	draw_fields: function() {
-		var w_checker_img = document.getElementById("w_checker");
-		var w_queen_img = document.getElementById("w_queen");
-		var b_checker_img = document.getElementById("b_checker");
-		var b_queen_img = document.getElementById("b_queen");
-		var canv = document.getElementById("fields");
-		var ctx = canv.getContext("2d");
-
-		for(var y = 0; y < 8; y++) {
-			for(var x = 0; x < 8; x++) {
-				ctx.clearRect(x * 48, y * 48, 48, 48);
-				switch(this.fields[y][x]) {
-					case W:
-						ctx.drawImage(w_checker_img, x * 48, y * 48, 48,48);
-						break;
-					case WQ:
-						ctx.drawImage(w_queen_img, x * 48, y * 48, 48,48);		
-						break;
-					case B:
-						ctx.drawImage(b_checker_img, x * 48, y * 48, 48,48);
-						break;
-					case BQ:
-						ctx.drawImage(b_queen_img, x * 48, y * 48, 48,48);		
-						break;
-					case E:
-					case X:
-
-						break;
-					default:
-				};				
+			if(this.fields[pos.y][pos.x] != E) {
+				this.fields[pos.y][pos.x] = E;
+				return true;
 			};
 		};
+		return false;
+
 	},
 	
-	make_hop: function(player, hop) {
-		if(game.is_valid_hop(player, hop)) {
-			this.fields[hop.to.y][hop.to.x] = this.fields[hop.from.y][hop.from.x];
-			this.fields[hop.from.y][hop.from.x] = E;
-			game.hit_hop(hop);
+	possible_hops_from: function(pos, player) {
+
+		if(belongs_to(this.fields[pos.y][pos.x]) != player) return {hits: [], moves: []};
+		
+		var hop = {
+			from: {
+				x: pos.x,
+				y: pos.y
+			},
+			to: {
+				x: 0,
+				y: 0
+			}
+		};
+
+		var hits = [];
+		var moves = [];
+
+		var r;
+	
+		if(!is_queen(this.fields[pos.y][pos.x])) {
+			
+			var f = [ 
+			[ pos.x - 1, pos.y - 1 ],
+			[ pos.x - 1, pos.y + 1 ],
+			[ pos.x + 1, pos.y - 1 ],
+			[ pos.x + 1, pos.y + 1 ],
+			[ pos.x - 2, pos.y - 2 ],
+			[ pos.x - 2, pos.y + 2 ],
+			[ pos.x + 2, pos.y - 2 ],
+			[ pos.x + 2, pos.y + 2 ] ];
+			
+			for(var i in f) {
+				[ hop.to.x, hop.to.y ] = f[i];
+				r = this.is_valid_hop(player, hop);
+				
+				if(r == HOP_HIT) hits.push(new_hop(hop));
+				if(r == HOP_MOVE) moves.push(new_hop(hop));
+			};
+			
+		} else { /* queen */		
+			var y1 = pos.y - pos.x;
+			var y2 = pos.y + pos.x;
+			
+			for(var x=0; x < 8; x++) {
+
+				hop.to.x = x;
+				
+				hop.to.y = y1;
+				r = this.is_valid_hop(player, hop);
+				if(r == HOP_HIT) hits.push(new_hop(hop));
+				if(r == HOP_MOVE) moves.push(new_hop(hop));
+			
+				hop.to.y = y2;
+				r = this.is_valid_hop(player, hop);
+				if(r == HOP_HIT) hits.push(new_hop(hop));
+				if(r == HOP_MOVE) moves.push(new_hop(hop));
+
+				y1 += 1;
+				y2 -= 1;
+			};
+		};
+		return {hits, moves};
+	},
+
+	possible_hops: function() {
+		var moves = [];
+		var hits = [];
+		
+		var player = this.player;
+		
+		if(this.first_hop) {
+		
+			for(var y = 0; y < 8; y++) {
+				for(var x = 0; x < 8; x++) {
+					var hops = this.possible_hops_from({x: x, y: y}, player);
+					moves = moves.concat(hops.moves);
+					hits = hits.concat(hops.hits);
+				};
+			};
+			
+			if(hits.length) return hits;
+			else return moves;
+
+		} else { /* not first hop - must hit from hit_pos */
+			var hops = this.possible_hops_from(this.hit_pos, player);
+			return hops.hits;
 		};
 	},
-		
+
 	promote: function() {
 		for(var x=0; x<8; x++) {
 			if(belongs_to(this.fields[0][x]) == W) this.fields[0][x] = WQ;
 			if(belongs_to(this.fields[7][x]) == B) this.fields[7][x] = BQ;
 		};
+	},
+	
+	make_hop: function(hop) {
+		/* assume hop is valid */
+		var h, r;
+		
+		this.fields[hop.to.y][hop.to.x] = this.fields[hop.from.y][hop.from.x];
+		this.fields[hop.from.y][hop.from.x] = E;
+		h = game.hit_hop(hop);
+		
+		this.hit_pos = { x: hop.to.x, y: hop.to.y };
+		this.first_hop = false;
+		
+		r = this.possible_hops();
+		
+		if(!h || (r.length == 0)) {
+			this.promote();
+			this.player = foe_of(this.player);
+			this.first_hop = true;
+			r = this.possible_hops();
+		};
+		
+		return r;
+
+	},
+	
+	fork: function(player, hop) {
+		game = {
+			fields: [],
+			/* not cloning init */
+			is_valid_hop: this.is_valid_hop,
+			hit_hop: this.hit_hop,
+			possible_hops: this.possible_hops,
+			promote: this.promote,
+			make_hop: this.make_hop,
+			fork: this.fork
+		};
+
+		
+		return game;
 	}
+		
+
 	
 		
 };
 
+var turn = {
+	player: 0,
+	hops: [],
+};
+
+var turn_generator = {
+	game: undefined,
+	state: 0,
+	turn: undefined,
+
+	start(game, player) {
+		this.game = game;
+		this.turn = { player: player, hops: [] };
+	},
+	
+	
+	
+};
+
+
+
+var must_hit = false;
+var hit_pos = { x: 0, y: 0 };
 function click(ev) {
 	
 	var x, y;
@@ -265,28 +413,84 @@ function click(ev) {
 	console.log(x + " " + y);
 
 	if(input.mode == input.modes.FROM) {
-		if(belongs_to(game.fields[y][x]) == W) {
+//		if(belongs_to(game.fields[y][x]) == W) {
 			input.from = { x: x, y: y };
 			input.mode = input.modes.TO;
 			highlight.style.left = x * 48;
 			highlight.style.top = y * 48;
 			highlight.style.visibility = "visible";
 			
-		};
+//		};
 		
 	} else if(input.mode == input.modes.TO) {
 		
 			highlight.style.visibility = "hidden";
 			input.to = { x: x, y: y };
 			input.mode = input.modes.FROM;
+
+			/* all moves and hits possible for player W */
+			if(find_hop(input, game.possible_hops())) {
+
+			var r = game.make_hop({ from: input.from, to: input.to });
+
+
+			draw_fields(game);
+			draw_hops(r);
 			
-			game.make_hop(W, { from: input.from, to: input.to });
-			game.promote();
-			game.draw_fields();
+			if(r.length == 0) {
+				window.alert(((foe_of(game.player)==W)?"White":"Black") + " wins!");
+			
+			};
+			
+		};
 			
 	};
 };
 
+
+function draw_fields(game) {
+	var w_checker_img = document.getElementById("w_checker");
+	var w_queen_img = document.getElementById("w_queen");
+	var b_checker_img = document.getElementById("b_checker");
+	var b_queen_img = document.getElementById("b_queen");
+	var canv = document.getElementById("fields");
+	var ctx = canv.getContext("2d");
+
+	for(var y = 7; y >= 0; y--) {
+		for(var x = 0; x < 8; x++) {
+			ctx.clearRect(x * 48, y * 48, 48, 48);
+			switch(game.fields[y][x]) {
+				case W:
+					ctx.drawImage(w_checker_img, x * 48, y * 48, 48,48);
+					break;
+				case WQ:
+					ctx.drawImage(w_queen_img, x * 48, y * 48, 48,48);		
+					break;
+				case B:
+					ctx.drawImage(b_checker_img, x * 48, y * 48, 48,48);
+					break;
+				case BQ:
+					ctx.drawImage(b_queen_img, x * 48, y * 48, 48,48);		
+					break;
+				case E:
+				case X:
+					break;
+				default:
+			};				
+		};
+	};
+};
+
+function draw_hops(hops) {
+	var canv = document.getElementById("fields");
+	var ctx = canv.getContext("2d");
+	for(i in hops) {
+		ctx.beginPath();
+		ctx.moveTo(hops[i].from.x * 48 + 24, hops[i].from.y * 48 + 24);
+		ctx.lineTo(hops[i].to.x * 48 + 24, hops[i].to.y * 48 + 24);
+		ctx.stroke();		
+	};	
+};
 
 
 function init() {
@@ -294,7 +498,8 @@ function init() {
 	e_overlay.addEventListener("click", click);
 	
 	game.init();
-	game.draw_fields();
+	draw_fields(game);
+	draw_hops(game.possible_hops());
 };
 
 
