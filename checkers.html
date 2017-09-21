@@ -81,6 +81,10 @@ var BQ = -2;
 var HOP_HIT = 1;
 var HOP_MOVE = 2;
 	
+var weights = {
+	men: 1,
+	kings: 1.5
+};
 	
 function foe_of(player) {
 	if(player == B) return W;
@@ -136,6 +140,7 @@ var game = {
 	first_hop: true,
 	hit_pos: undefined,
 	player: 0,
+	difficulty: 2,
 
 	init: function() {
 	
@@ -370,7 +375,7 @@ var game = {
 
 	},
 	
-	fork: function(player, hop) {
+	fork: function() {
 		var r = {
 			fields: [],
 			first_hop: this.first_hop,
@@ -383,7 +388,13 @@ var game = {
 			possible_hops: this.possible_hops,
 			promote: this.promote,
 			make_hop: this.make_hop,
-			fork: this.fork
+			fork: this.fork,
+			number_of: this.number_of,
+			board_value: this.board_value,
+			cpu_turn: this.cpu_turn,
+			min_max: this.min_max,
+			max_move: this.max_move,
+			min_move: this.min_move
 		};
 
 		for(y = 0; y < 8; y++) {
@@ -393,10 +404,114 @@ var game = {
 			};
 		};
 		return r;
-	}
+	},
+		
+	number_of: function(piece, board) { // determine no. of specific pieces
+		var number = 0;
+		for(var y = 0; y < 8; y++) {
+			for(var x = 0; x < 8; x++) {
+				if (game.fields[y][x] == piece){
+					number++;
+				}
+			}
+		}
+		return number;
+	},
+
+	board_value: function() {
+		return weights.kings*this.number_of(WQ, game.fields) + weights.men*this.number_of(W, game.fields) - 
+			weights.kings*this.number_of(BQ, game.fields) - weights.men*this.number_of(B, game.fields);
+	},
+
+	cpu_turn: function() {
+		var r = this.min_max(this.fields, this.difficulty);
 		
 
+		this.make_hop(r);
+		draw_fields(game);
+		
+		if(r.length == 0) {
+			setTimeout(function() {
+				window.alert(((foe_of(game.player)==W)?"White":"Black") + " player wins!");
+			}, 10);			
+		}
+		
+	},
+
+
+	best_move: 0,
+
+	min_max: function(board, depth) {
+		var best_hop_value = this.max_move(this.fields, depth);
+		return best_move;
+	},
+
+	max_move: function (board, depth) {
 	
+		
+			var hops = this.possible_hops();
+			if (hops.length == 0) {
+				return this.board_value();
+			}
+			best_move = hops[0];
+			var best_move_value = 9999;
+			var last_best_move_value = 9998;
+			for (var i=0 ; i<hops.length ; i++) {
+				
+				var next_game = game.fork();
+				next_game.make_hop(hops[i]);
+	
+				if (depth <= 0) {
+					var value = this.board_value(next_game.fields);
+					if (value < best_move_value) {
+						best_move_value = value;
+					}
+				} 
+				else {
+					last_best_move_value = best_move_value;
+					best_move_value = next_game.min_move(next_game.fields, depth-1);
+					if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
+						best_move = hops[i];
+						last_best_move_value = best_move_value;
+					}
+					
+				}
+				
+			}
+			
+			
+				return best_move_value;
+		
+	},
+
+	min_move: function (board, depth) {
+		
+		var hops = this.possible_hops();
+		if (hops.length == 0) {
+			return this.board_value();
+		}
+		best_move = hops[0];
+		var best_move_value = -9999;     
+		for (var i=0 ; i<hops.length ; i++) {
+
+			var next_game = game.fork();
+			next_game.make_hop(hops[i]);
+
+			if (depth <= 0) {
+				var value = this.board_value(next_game.fields);
+				if (value > best_move_value) {
+					best_move_value = value;
+				}
+			} 
+			else {
+				best_move_value = next_game.max_move(next_game.fields, depth-1);
+			}
+			
+		}
+		
+			return best_move_value;
+			
+	}
 		
 };
 
@@ -443,9 +558,15 @@ function click(ev) {
 				}, 10);			
 			};
 			
-		};
-			
+		};			
 	};
+	if (game.player == B) {
+		while (game.player == B) {
+			game.cpu_turn();
+			draw_hops(game.possible_hops());
+		}
+		
+	}
 };
 
 
