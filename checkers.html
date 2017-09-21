@@ -426,8 +426,15 @@ var game = {
 	cpu_turn: function() {
 		var r = this.min_max(this.fields, this.difficulty);
 		
-
-		this.make_hop(r);
+		if(find_hop(r, this.possible_hops())) {
+			this.make_hop(r);
+		} else {
+			console.log("invalid cpu hop: " +
+			"[ " + r.from.x + ", " + r.from.y + " ]" + 
+			" -> " +
+			"[ " + r.to.x + ", " + r.to.y + " ]");
+		};
+		
 		draw_fields(game);
 		
 		if(r.length == 0) {
