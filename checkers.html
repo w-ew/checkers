@@ -561,14 +561,21 @@ function click(ev) {
 		};			
 	};
 	if (game.player == B) {
-		while (game.player == B) {
-			game.cpu_turn();
-			draw_hops(game.possible_hops());
-		}
-		
-	}
+
+		setTimeout(delayed_cpu_turn, 200);
+		//draw_hops(game.possible_hops());
+	};
 };
 
+function delayed_cpu_turn() {
+		game.cpu_turn();
+		draw_fields(game);
+		if(game.player == B) {
+			setTimeout(delayed_cpu_turn, 200);
+		} else {
+			draw_hops(game.possible_hops());
+		};
+};
 
 function draw_fields(game) {
 	var w_checker_img = document.getElementById("w_checker");
