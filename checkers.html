@@ -410,8 +410,9 @@ var game = {
 			board_value: this.board_value,
 			cpu_turn: this.cpu_turn,
 			min_max: this.min_max,
-			max_move: this.max_move,
-			min_move: this.min_move
+			max_hop: this.max_hop,
+			min_hop: this.min_hop,
+			randomize_first_hop: this.randomize_first_hop
 		};
 
 		for(y = 0; y < 8; y++) {
@@ -423,7 +424,7 @@ var game = {
 		return r;
 	},
 		
-	number_of: function(piece) { // determine no. of specific pieces
+	number_of: function(piece) { /* determine no. of specific pieces */
 		var number = 0;
 		for(var y = 0; y < 8; y++) {
 			for(var x = 0; x < 8; x++) {
@@ -462,56 +463,61 @@ var game = {
 
 	},
 
-
-	best_move: 0,
-
-	min_max: function(board, depth) {
-		var best_hop_value = this.max_move(this.fields, depth);
-		return this.best_move;
+	randomize_first_hop: function(length) {
+		return Math.floor((Math.random() * (length-1)));
 	},
 
-	max_move: function (board, depth) {
+	best_hop: 0,
+
+	min_max: function(board, depth) {
+		var best_hop_value = this.max_hop(this.fields, depth);
+		return this.best_hop;
+	},
+
+	max_hop: function (board, depth) {
 	
 		
 		var hops = this.possible_hops();
 		if (hops.length == 0) {
 			return this.board_value();
 		}
-		this.best_move = hops[0];
-		var best_move_value = 9999;
-		var last_best_move_value = 9998;
+		var rand_i = this.randomize_first_hop(hops.length); /* if all possibilities are equal do random */
+		best_hop = hops[rand_i];
+
+		var best_hop_value = 9999;
+		var best_best_hop_value = 9998;
 		for (var i=0 ; i<hops.length ; i++) {
 			
 			var next_game = this.fork();
-			next_game.make_hop(hops[i]);
+			next_game.make_hop(hops[i]); 
 
-			if (depth <= 0) {
+			if (depth <= 0) { /* find best value for leaves */
 				var value = next_game.board_value(next_game.fields);
-				if (value < best_move_value) {
-					best_move_value = value;
+				if (value < best_hop_value) {
+					best_hop_value = value;
 				}
 			} 
 			else {
-				last_best_move_value = best_move_value;
-				best_move_value = next_game.min_move(next_game.fields, depth-1);
-				if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
-					this.best_move = hops[i];
-					last_best_move_value = best_move_value;
+				best_best_hop_value = best_hop_value;
+				best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+				if (best_best_hop_value <= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
+					this.best_hop = hops[i];
+					best_best_hop_value = best_hop_value;
 				}
 			}
 		}
 		
-		return best_move_value;
+		return best_hop_value;
 	},
 
-	min_move: function (board, depth) {
+	min_hop: function (board, depth) {
 		
 		var hops = this.possible_hops();
 		if (hops.length == 0) {
 			return this.board_value();
 		}
-		this.best_move = hops[0];
-		var best_move_value = -9999;     
+		this.best_hop = hops[0];
+		var best_hop_value = -9999;     
 		for (var i=0 ; i<hops.length ; i++) {
 
 			var next_game = this.fork();
@@ -519,16 +525,16 @@ var game = {
 
 			if (depth <= 0) {
 				var value = next_game.board_value(next_game.fields);
-				if (value > best_move_value) {
-					best_move_value = value;
+				if (value > best_hop_value) {
+					best_hop_value = value;
 				}
 			} 
 			else {
-				best_move_value = next_game.max_move(next_game.fields, depth-1);
+				best_hop_value = next_game.max_hop(next_game.fields, depth-1);
 			}
 		}
 		
-		return best_move_value;
+		return best_hop_value;
 	}
 		
 };
@@ -585,9 +591,7 @@ function click(ev) {
 		};			
 	};
 	if (game.player == B) {
-
 		setTimeout(delayed_cpu_turn, 200);
-		//draw_hops(game.possible_hops());
 	};
 };
 
