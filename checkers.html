@@ -116,6 +116,8 @@ function weight(field) {
 	};
 };
 
+var weight_win = 5;
+
 var game_over = false;
 var difficulty = 2;
 	
@@ -459,6 +461,9 @@ var game = {
 			weight(B) * this.number_of(B) +
 			weight(W) * this.number_of(W) +
 			weight(WQ) * this.number_of(WQ);
+			
+		if(this.number_of(W) + this.number_of(WQ) == 0) r += weight_win;
+			
 		console.log(r);
 		
 		return r;
