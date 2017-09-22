@@ -89,7 +89,9 @@ var weights = {
 	kings: 1.5
 };
 
+
 var game_over = false;
+var difficulty = 2;
 	
 function foe_of(player) {
 	if(player == B) return W;
@@ -163,6 +165,8 @@ var game = {
 			this.player = W;
 			this.hit_pos = { x: undefined, y: undefined };
 	},
+
+
 	
 	/* test if a hop is possible */
 
@@ -456,6 +460,7 @@ var game = {
 	},
 
 	max_move: function (board, depth) {
+	
 		
 		var hops = this.possible_hops();
 		if (hops.length == 0) {
@@ -481,8 +486,15 @@ var game = {
 				if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
 					this.best_move = hops[i];
 					last_best_move_value = best_move_value;
+					best_move_value = next_game.min_move(next_game.fields, depth-1);
+					if (last_best_move_value <= best_move_value && depth >= difficulty) {
+						best_move = hops[i];
+						last_best_move_value = best_move_value;
+					}
+					
 				}
 			}
+			
 		}
 		
 		return best_move_value;
@@ -630,10 +642,24 @@ function draw_hops(hops) {
 };
 
 
+function set_difficulty() {
+	var parameters = location.search.substring(1).split("?");
+	var temp = parameters[0].split("=");
+	var lev = unescape(temp[1]);
+	if (lev == "hard") {
+		difficulty = 6;
+	}
+	else if (lev == "easy") {
+		difficulty = 2;
+	}
+}
+
 function init() {
 	var e_overlay = document.getElementById("overlay");
 	e_overlay.addEventListener("click", click);
 	
+	set_difficulty();
+
 	game.init();
 	draw_fields(game);
 	draw_hops(game.possible_hops());
