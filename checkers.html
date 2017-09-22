@@ -470,7 +470,7 @@ var game = {
 	},
 
 	cpu_turn: function() {
-		var r = this.min_max(game.fork().fields, this.difficulty);
+		var r = this.min_max(this.difficulty);
 		
 		msg = "cpu hop: " +
 			"[ " + r.from.x + ", " + r.from.y + " ]" + 
@@ -494,12 +494,12 @@ var game = {
 
 	best_hop: 0,
 
-	min_max: function(board, depth) {
-		var best_hop_value = this.max_hop(this.fields, depth);
+	min_max: function(depth) {
+		var best_hop_value = this.max_hop(depth);
 		return this.best_hop;
 	},
 
-	max_hop: function (board, depth) {
+	max_hop: function (depth) {
 	
 		
 		var hops = this.possible_hops();
@@ -526,10 +526,10 @@ var game = {
 				//best_best_hop_value = best_hop_value;
 
 				if (next_game.player == W) { /* if player changes */
-					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+					best_hop_value = next_game.min_hop(depth-1);
 				}
 				else {
-					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+					best_hop_value = next_game.max_hop(depth-1);
 				}
 
 				if (best_best_hop_value <= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
@@ -542,7 +542,7 @@ var game = {
 		return best_best_hop_value;
 	},
 
-	min_hop: function (board, depth) {
+	min_hop: function (depth) {
 		
 		var hops = this.possible_hops();
 		if (hops.length == 0) {
@@ -564,10 +564,10 @@ var game = {
 			} 
 			else {
 				if (next_game.player == W) { /* if player changes */
-					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+					best_hop_value = next_game.min_hop(depth-1);
 				}
 				else {
-					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+					best_hop_value = next_game.max_hop(depth-1);
 				}
 				if (best_best_hop_value >= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
 					this.best_hop = hops[i];
