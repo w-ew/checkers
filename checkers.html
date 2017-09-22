@@ -89,7 +89,7 @@ var input = {
 };
 
 var debug = {
-	del: false
+	enable: false
 };
 
 var X = 99;
@@ -125,6 +125,7 @@ function foe_of(player) {
 	if(player == B) return W;
 	if(player == W) return B;
 	console.log(foe_of.name + ": invalid player");
+	return E;
 };
 
 function belongs_to(field) {
@@ -494,6 +495,10 @@ var game = {
 	mm_hop: function(depth) {
 		var hops = this.possible_hops();
 		
+		if(hops.length == 0) {
+			return 0;
+		};
+		
 		var best_delta = -Infinity;
 		for(var i=0; i<hops.length; i++) {
 
@@ -551,7 +556,15 @@ function click(ev) {
 	x = Math.floor(ev.clientX / 48);
 	y = Math.floor(ev.clientY / 48);
 
-	if(debug.del) { game.fields[y][x] = E; draw_fields(game); return; };
+	if(debug.enable) { 
+		if(ev.ctrlKey) {
+			game.fields[y][x] = foe_of(belongs_to(game.fields[y][x]));
+		} else {
+			game.fields[y][x] = E;
+		};
+		draw_fields(game);
+		return;
+	};
 
 	if(input.mode == input.modes.FROM) {
 //		if(belongs_to(game.fields[y][x]) == W) {
