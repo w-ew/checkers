@@ -430,6 +430,7 @@ var game = {
 			board_value: this.board_value,
 			cpu_turn: this.cpu_turn,
 			min_max: this.min_max,
+			mm_hop: this.mm_hop,
 			max_hop: this.max_hop,
 			min_hop: this.min_hop,
 			randomize_first_hop: this.randomize_first_hop
@@ -462,15 +463,12 @@ var game = {
 			weight(W) * this.number_of(W) +
 			weight(WQ) * this.number_of(WQ);
 			
-		if(this.number_of(W) + this.number_of(WQ) == 0) r += weight_win;
-			
-		console.log(r);
-		
+	//	if(this.number_of(W) + this.number_of(WQ) == 0) r += weight_win;		
 		return r;
 	},
 
 	cpu_turn: function() {
-		var r = this.min_max(game.fork().fields, this.difficulty);
+		var r = this.min_max(game.fields, this.difficulty);
 		
 		msg = "cpu hop: " +
 			"[ " + r.from.x + ", " + r.from.y + " ]" + 
@@ -495,9 +493,38 @@ var game = {
 	best_hop: 0,
 
 	min_max: function(board, depth) {
-		var best_hop_value = this.max_hop(this.fields, depth);
+	//	var best_hop_value = this.max_hop(this.fields, depth);
+		this.mm_hop(depth);
 		return this.best_hop;
 	},
+
+
+	mm_hop: function(depth) {
+		var hops = this.possible_hops();
+		
+		var best_delta = -Infinity;
+		for(var i=0; i<hops.length; i++) {
+
+			var next_game = game.fork();
+			next_game.make_hop(hops[i]);
+			var delta = next_game.board_value() - this.board_value();
+		
+			if(this.player == W) delta *= -1;
+			
+			if(depth >= 0) {
+				delta += next_game.mm_hop(depth - 1);
+			};
+			
+			if(delta > best_delta) {
+				best_delta = delta;
+				this.best_hop = hops[i];				
+			};
+		};
+			
+		return best_delta;
+	},
+
+
 
 	max_hop: function (board, depth) {
 	
@@ -510,31 +537,32 @@ var game = {
 		this.best_hop = hops[rand_i];
 
 		var best_hop_value = 9999;
-		var best_best_hop_value = 9998;
 		for (var i=0 ; i<hops.length ; i++) {
-			
+
+			var base_value = this.board_value();
 			var next_game = this.fork();
 			next_game.make_hop(hops[i]); 
+			var delta = next_game.board_value() - base_value;
 
 			if (depth <= 0) { /* find best value for leaves */
 				var value = next_game.board_value();
-				if (value < best_hop_value) {
-					best_hop_value = value;
+				if (value >= best_hop_value) {
+					best_hop_value = delta;
 				}
 			} 
 			else {
-				best_best_hop_value = best_hop_value;
-
-				if (next_game.player = W) { /* if player changes */
-					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+				var hop_value;
+				
+				if (next_game.player == W) { /* if player changes */
+					delta += next_game.min_hop(next_game.fields, depth-1);
 				}
 				else {
-					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+					delta += next_game.max_hop(next_game.fields, depth-1);
 				}
 
-				if (best_best_hop_value <= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
+				if (delta >= best_hop_value) { /* when all tree is searched find the best hop */
 					this.best_hop = hops[i];
-					best_best_hop_value = best_hop_value;
+					best_hop_value = delta;
 				}
 			}
 		}
@@ -544,34 +572,44 @@ var game = {
 
 	min_hop: function (board, depth) {
 		
+
 		var hops = this.possible_hops();
 		if (hops.length == 0) {
-			return this.board_value();
+			return 0;
 		}
 		this.best_hop = hops[0];
-		var best_hop_value = -9999;     
+		var best_hop_value = 9999;     
 		for (var i=0 ; i<hops.length ; i++) {
 
+			var base_value = this.board_value();
 			var next_game = this.fork();
 			next_game.make_hop(hops[i]);
+			var delta = next_game.board_value() - base_value;
+
 
 			if (depth <= 0) {
-				var value = next_game.board_value();
-				if (value > best_hop_value) {
-					best_hop_value = value;
+				if (delta <= best_hop_value) {
+					best_hop_value = delta;
 				}
 			} 
 			else {
-				if (next_game.player = W) { /* if player changes */
-					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+				var hop_value;
+				
+				if (next_game.player == W) { /* if player changes */
+					delta += next_game.min_hop(next_game.fields, depth-1);
 				}
 				else {
-					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+					delta += next_game.max_hop(next_game.fields, depth-1);
+				}
+				
+				if (delta <= best_hop_value) { /* when all tree is searched find the best hop */
+					this.best_hop = hops[i];
+					best_hop_value = delta;
 				}
 			}
 		}
 		
-		return best_hop_value;
+		return -best_hop_value;
 	}
 		
 };
