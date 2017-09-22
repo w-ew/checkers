@@ -102,11 +102,6 @@ var BQ = -2;
 var HOP_HIT = 1;
 var HOP_MOVE = 2;
 	
-var weights = {
-	men: 1,
-	kings: 1.5
-};
-
 function weight(field) {
 	switch(field) {
 		case W: 	return -1;
@@ -115,8 +110,6 @@ function weight(field) {
 		case BQ: 	return 1.5;
 	};
 };
-
-var weight_win = 5;
 
 var game_over = false;
 var difficulty = 2;
@@ -176,7 +169,6 @@ var game = {
 	first_hop: true,
 	hit_pos: undefined,
 	player: 0,
-	difficulty: 2,
 
 	init: function() {
 	
@@ -449,9 +441,9 @@ var game = {
 			for(var x = 0; x < 8; x++) {
 				if (this.fields[y][x] == piece){
 					number++;
-				}
-			}
-		}
+				};
+			};
+		};
 		return number;
 	},
 
@@ -461,12 +453,11 @@ var game = {
 			weight(W) * this.number_of(W) +
 			weight(WQ) * this.number_of(WQ);
 			
-	//	if(this.number_of(W) + this.number_of(WQ) == 0) r += weight_win;		
 		return r;
 	},
 
 	cpu_turn: function() {
-		var r = this.min_max(game.fields, this.difficulty);
+		var r = this.min_max(difficulty);
 		
 		msg = "cpu hop: " +
 			"[ " + r.from.x + ", " + r.from.y + " ]" + 
@@ -486,7 +477,7 @@ var game = {
 
 	best_hop: 0,
 
-	min_max: function(board, depth) {
+	min_max: function(depth) {
 		this.mm_hop(depth);
 		return this.best_hop;
 	},
@@ -547,8 +538,8 @@ function check_winner(game) {
 	} else return false;
 };
 
-var must_hit = false;
-var hit_pos = { x: 0, y: 0 };
+
+
 function click(ev) {
 	
 	var x, y;
@@ -567,14 +558,12 @@ function click(ev) {
 	};
 
 	if(input.mode == input.modes.FROM) {
-//		if(belongs_to(game.fields[y][x]) == W) {
+
 			input.from = { x: x, y: y };
 			input.mode = input.modes.TO;
 			highlight.style.left = x * 48;
 			highlight.style.top = y * 48;
 			highlight.style.visibility = "visible";
-			
-//		};
 		
 	} else if(input.mode == input.modes.TO) {
 		
@@ -588,7 +577,7 @@ function click(ev) {
 			var r = game.make_hop({ from: input.from, to: input.to });
 
 			draw_fields(game);
-			draw_hops(r);
+			if(game.player == W) draw_hops(r);
 			
 			game_over = check_winner(game);
 			if(game_over) return;
@@ -665,7 +654,7 @@ function set_difficulty() {
 	var temp = parameters[0].split("=");
 	var lev = unescape(temp[1]);
 	if (lev == "hard") {
-		difficulty = 6;
+		difficulty = 3;
 	}
 	else if (lev == "easy") {
 		difficulty = 2;
