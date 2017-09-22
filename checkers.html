@@ -70,6 +70,9 @@ var input = {
 	to: { x:0, y: 0 }
 };
 
+var debug = {
+	del: false
+};
 
 var X = 99;
 var E = 0;
@@ -85,6 +88,8 @@ var weights = {
 	men: 1,
 	kings: 1.5
 };
+
+var game_over = false;
 	
 function foe_of(player) {
 	if(player == B) return W;
@@ -357,7 +362,7 @@ var game = {
 		
 		this.fields[hop.to.y][hop.to.x] = this.fields[hop.from.y][hop.from.x];
 		this.fields[hop.from.y][hop.from.x] = E;
-		h = game.hit_hop(hop);
+		h = this.hit_hop(hop);
 		
 		this.hit_pos = { x: hop.to.x, y: hop.to.y };
 		this.first_hop = false;
@@ -410,7 +415,7 @@ var game = {
 		var number = 0;
 		for(var y = 0; y < 8; y++) {
 			for(var x = 0; x < 8; x++) {
-				if (game.fields[y][x] == piece){
+				if (this.fields[y][x] == piece){
 					number++;
 				}
 			}
@@ -419,30 +424,27 @@ var game = {
 	},
 
 	board_value: function() {
-		return weights.kings*this.number_of(WQ, game.fields) + weights.men*this.number_of(W, game.fields) - 
-			weights.kings*this.number_of(BQ, game.fields) - weights.men*this.number_of(B, game.fields);
+		return weights.kings*this.number_of(BQ, this.fields) + weights.men*this.number_of(B, this.fields) - 
+			weights.kings*this.number_of(WQ, this.fields) - weights.men*this.number_of(W, this.fields);
 	},
 
 	cpu_turn: function() {
-		var r = this.min_max(this.fields, this.difficulty);
+		var r = this.min_max(game.fork().fields, this.difficulty);
 		
+		msg = "cpu hop: " +
+			"[ " + r.from.x + ", " + r.from.y + " ]" + 
+			" -> " +
+			"[ " + r.to.x + ", " + r.to.y + " ]";
+			
 		if(find_hop(r, this.possible_hops())) {
 			this.make_hop(r);
 		} else {
-			console.log("invalid cpu hop: " +
-			"[ " + r.from.x + ", " + r.from.y + " ]" + 
-			" -> " +
-			"[ " + r.to.x + ", " + r.to.y + " ]");
+			msg += " (invalid)";
 		};
+		console.log(msg);
 		
-		draw_fields(game);
-		
-		if(r.length == 0) {
-			setTimeout(function() {
-				window.alert(((foe_of(game.player)==W)?"White":"Black") + " player wins!");
-			}, 10);			
-		}
-		
+		draw_fields(game);		
+
 	},
 
 
@@ -450,45 +452,40 @@ var game = {
 
 	min_max: function(board, depth) {
 		var best_hop_value = this.max_move(this.fields, depth);
-		return best_move;
+		return this.best_move;
 	},
 
 	max_move: function (board, depth) {
-	
 		
-			var hops = this.possible_hops();
-			if (hops.length == 0) {
-				return this.board_value();
-			}
-			best_move = hops[0];
-			var best_move_value = 9999;
-			var last_best_move_value = 9998;
-			for (var i=0 ; i<hops.length ; i++) {
-				
-				var next_game = game.fork();
-				next_game.make_hop(hops[i]);
-	
-				if (depth <= 0) {
-					var value = this.board_value(next_game.fields);
-					if (value < best_move_value) {
-						best_move_value = value;
-					}
-				} 
-				else {
-					last_best_move_value = best_move_value;
-					best_move_value = next_game.min_move(next_game.fields, depth-1);
-					if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
-						best_move = hops[i];
-						last_best_move_value = best_move_value;
-					}
-					
+		var hops = this.possible_hops();
+		if (hops.length == 0) {
+			return this.board_value();
+		}
+		this.best_move = hops[0];
+		var best_move_value = 9999;
+		var last_best_move_value = 9998;
+		for (var i=0 ; i<hops.length ; i++) {
+			
+			var next_game = this.fork();
+			next_game.make_hop(hops[i]);
+
+			if (depth <= 0) {
+				var value = next_game.board_value(next_game.fields);
+				if (value < best_move_value) {
+					best_move_value = value;
 				}
-				
+			} 
+			else {
+				last_best_move_value = best_move_value;
+				best_move_value = next_game.min_move(next_game.fields, depth-1);
+				if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
+					this.best_move = hops[i];
+					last_best_move_value = best_move_value;
+				}
 			}
-			
-			
-				return best_move_value;
+		}
 		
+		return best_move_value;
 	},
 
 	min_move: function (board, depth) {
@@ -497,15 +494,15 @@ var game = {
 		if (hops.length == 0) {
 			return this.board_value();
 		}
-		best_move = hops[0];
+		this.best_move = hops[0];
 		var best_move_value = -9999;     
 		for (var i=0 ; i<hops.length ; i++) {
 
-			var next_game = game.fork();
+			var next_game = this.fork();
 			next_game.make_hop(hops[i]);
 
 			if (depth <= 0) {
-				var value = this.board_value(next_game.fields);
+				var value = next_game.board_value(next_game.fields);
 				if (value > best_move_value) {
 					best_move_value = value;
 				}
@@ -513,16 +510,24 @@ var game = {
 			else {
 				best_move_value = next_game.max_move(next_game.fields, depth-1);
 			}
-			
 		}
 		
-			return best_move_value;
-			
+		return best_move_value;
 	}
 		
 };
 
-
+function check_winner(game) {
+	if(game.first_hop == true) {
+		if(game.possible_hops().length == 0) {
+			/* add a delay so that redraw finishes before msgbox freezes UI (chrome) */
+			setTimeout(function() {
+				window.alert(((foe_of(game.player)==W)?"White":"Black") + " player wins!");
+			}, 10);
+			return true;		
+		};	
+	} else return false;
+};
 
 var must_hit = false;
 var hit_pos = { x: 0, y: 0 };
@@ -533,6 +538,8 @@ function click(ev) {
 	x = Math.floor(ev.clientX / 48);
 	y = Math.floor(ev.clientY / 48);
 	console.log(x + " " + y);
+
+	if(debug.del) { game.fields[y][x] = E; draw_fields(game); return; };
 
 	if(input.mode == input.modes.FROM) {
 //		if(belongs_to(game.fields[y][x]) == W) {
@@ -558,12 +565,6 @@ function click(ev) {
 
 			draw_fields(game);
 			draw_hops(r);
-			
-			if(r.length == 0) {
-				setTimeout(function() {
-					window.alert(((foe_of(game.player)==W)?"White":"Black") + " player wins!");
-				}, 10);			
-			};
 			
 		};			
 	};
