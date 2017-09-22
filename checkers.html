@@ -89,6 +89,14 @@ var weights = {
 	kings: 1.5
 };
 
+function weight(field) {
+	switch(field) {
+		case W: 	return 1;
+		case WQ: 	return 1.5;
+		case B: 	return -1;
+		case BQ: 	return -1.5;
+	};
+};
 
 var game_over = false;
 var difficulty = 2;
@@ -415,7 +423,7 @@ var game = {
 		return r;
 	},
 		
-	number_of: function(piece, board) { // determine no. of specific pieces
+	number_of: function(piece) { // determine no. of specific pieces
 		var number = 0;
 		for(var y = 0; y < 8; y++) {
 			for(var x = 0; x < 8; x++) {
@@ -428,8 +436,11 @@ var game = {
 	},
 
 	board_value: function() {
-		return weights.kings*this.number_of(BQ, this.fields) + weights.men*this.number_of(B, this.fields) - 
-			weights.kings*this.number_of(WQ, this.fields) - weights.men*this.number_of(W, this.fields);
+		return 
+			weight(BQ) * this.number_of(BQ) + 
+			weight(B) * this.number_of(B) +
+			weight(W) * this.number_of(W) +
+			weight(WQ) * this.number_of(WQ);
 	},
 
 	cpu_turn: function() {
