@@ -486,15 +486,8 @@ var game = {
 				if (last_best_move_value <= best_move_value && depth >= this.difficulty) {
 					this.best_move = hops[i];
 					last_best_move_value = best_move_value;
-					best_move_value = next_game.min_move(next_game.fields, depth-1);
-					if (last_best_move_value <= best_move_value && depth >= difficulty) {
-						best_move = hops[i];
-						last_best_move_value = best_move_value;
-					}
-					
 				}
 			}
-			
 		}
 		
 		return best_move_value;
