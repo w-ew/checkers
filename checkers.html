@@ -525,7 +525,7 @@ var game = {
 			else {
 				best_best_hop_value = best_hop_value;
 
-				if (next_game.player = W) { /* if player changes */
+				if (next_game.player == W) { /* if player changes */
 					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
 				}
 				else {
@@ -562,7 +562,7 @@ var game = {
 				}
 			} 
 			else {
-				if (next_game.player = W) { /* if player changes */
+				if (next_game.player == W) { /* if player changes */
 					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
 				}
 				else {
