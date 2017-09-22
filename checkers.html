@@ -523,7 +523,7 @@ var game = {
 				}
 			} 
 			else {
-				best_best_hop_value = best_hop_value;
+				//best_best_hop_value = best_hop_value;
 
 				if (next_game.player == W) { /* if player changes */
 					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
@@ -539,7 +539,7 @@ var game = {
 			}
 		}
 		
-		return best_hop_value;
+		return best_best_hop_value;
 	},
 
 	min_hop: function (board, depth) {
@@ -550,6 +550,7 @@ var game = {
 		}
 		this.best_hop = hops[0];
 		var best_hop_value = -9999;     
+		var best_best_hop_value = -9998;
 		for (var i=0 ; i<hops.length ; i++) {
 
 			var next_game = this.fork();
@@ -568,10 +569,14 @@ var game = {
 				else {
 					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
 				}
+				if (best_best_hop_value >= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
+					this.best_hop = hops[i];
+					best_best_hop_value = best_hop_value;
+				}
 			}
 		}
 		
-		return best_hop_value;
+		return best_best_hop_value;
 	}
 		
 };
