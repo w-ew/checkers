@@ -517,7 +517,14 @@ var game = {
 			} 
 			else {
 				best_best_hop_value = best_hop_value;
-				best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+
+				if (next_game.player = W) { /* if player changes */
+					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+				}
+				else {
+					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+				}
+
 				if (best_best_hop_value <= best_hop_value && depth >= this.difficulty) { /* when all tree is searched find the best hop */
 					this.best_hop = hops[i];
 					best_best_hop_value = best_hop_value;
@@ -548,7 +555,12 @@ var game = {
 				}
 			} 
 			else {
-				best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+				if (next_game.player = B) { /* if player changes */
+					best_hop_value = next_game.min_hop(next_game.fields, depth-1);
+				}
+				else {
+					best_hop_value = next_game.max_hop(next_game.fields, depth-1);
+				}
 			}
 		}
 		
