@@ -42,6 +42,24 @@ body {
 	visibility: hidden;
 }
 
+#win_card {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 384px;
+	height: 384px;
+	visibility: hidden;
+	margin-top: 128px;
+}
+
+.blur {
+
+	filter: blur("4px");
+	-webkit-filter: blur(4px);
+	opacity: 0.4;
+
+}
+
 #overlay {
 	position: absolute;
 	left: 0;
@@ -539,14 +557,27 @@ var game = {
 		
 };
 
+function show_winner(player) {
+	var e_overlay = document.getElementById("overlay");
+	e_overlay.style.visibility = "hidden"
+
+	var e_fields = document.getElementById("fields");
+	var e_board = document.getElementById("board");
+	e_board.className = "blur";
+	e_fields.className = "blur";
+
+	var e_win_msg = document.getElementById("win_msg");
+	e_win_msg.innerHTML = ((player==W)?"White":"Black");
+
+	var e_win_card = document.getElementById("win_card");
+	e_win_card.style.visibility = "visible";
+};
+
 function check_winner(game) {
 	if(game.first_hop == true) {
 		if(game.possible_hops().length == 0) {
-			/* add a delay so that redraw finishes before msgbox freezes UI (chrome) */
-			setTimeout(function() {
-				window.alert(((foe_of(game.player)==W)?"White":"Black") + " player wins!");
-			}, 10);
-			return true;		
+			show_winner(foe_of(game.player));
+			return true;
 		};	
 	} else return false;
 };
@@ -559,7 +590,6 @@ function click(ev) {
 	var highlight = document.getElementById("highlight");
 	x = Math.floor(ev.clientX / 48);
 	y = Math.floor(ev.clientY / 48);
-	console.log(x + " " + y);
 
 	if(debug.del) { game.fields[y][x] = E; draw_fields(game); return; };
 
@@ -584,9 +614,11 @@ function click(ev) {
 
 			var r = game.make_hop({ from: input.from, to: input.to });
 
-
 			draw_fields(game);
 			draw_hops(r);
+			
+			game_over = check_winner(game);
+			if(game_over) return;
 			
 		};			
 	};
@@ -601,7 +633,12 @@ function delayed_cpu_turn() {
 		if(game.player == B) {
 			setTimeout(delayed_cpu_turn, 200);
 		} else {
-			draw_hops(game.possible_hops());
+			game_over = check_winner(game);
+			if(game_over) {
+				return;
+			} else {
+				draw_hops(game.possible_hops());
+			};
 		};
 };
 
@@ -676,9 +713,8 @@ function init() {
 
 function exit_dialog() {
 	
-	if(confirm("Are you sure you want to leave this game?")) {
-		window.location.href = "./start.html";
-	};
+	window.location.href = "./start.html";
+
 };
 
 
@@ -694,7 +730,13 @@ function exit_dialog() {
 <img id="b_queen" class="asset" src="black_queen.png">
 <img id="w_checker" class="asset" src="checker.png">
 <img id="w_queen" class="asset" src="queen.png">
+
+<div id="win_card">
+<div><center><h1><span id="win_msg"></span> wins!</h1></center></div>
+</div>
+
 <div id="overlay"></div>
+
 <div id="bottom_bar">
 <form id="button">
 	<center><input type="button" value="EXIT" onclick="exit_dialog();"/></center>
