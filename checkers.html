@@ -455,11 +455,13 @@ var game = {
 	},
 
 	board_value: function() {
-		return 
-			weight(BQ) * this.number_of(BQ) + 
+		var r = weight(BQ) * this.number_of(BQ) + 
 			weight(B) * this.number_of(B) +
 			weight(W) * this.number_of(W) +
 			weight(WQ) * this.number_of(WQ);
+		console.log(r);
+		
+		return r;
 	},
 
 	cpu_turn: function() {
@@ -510,7 +512,7 @@ var game = {
 			next_game.make_hop(hops[i]); 
 
 			if (depth <= 0) { /* find best value for leaves */
-				var value = next_game.board_value(next_game.fields);
+				var value = next_game.board_value();
 				if (value < best_hop_value) {
 					best_hop_value = value;
 				}
@@ -542,7 +544,7 @@ var game = {
 			next_game.make_hop(hops[i]);
 
 			if (depth <= 0) {
-				var value = next_game.board_value(next_game.fields);
+				var value = next_game.board_value();
 				if (value > best_hop_value) {
 					best_hop_value = value;
 				}
