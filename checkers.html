@@ -500,7 +500,7 @@ var game = {
 			return this.board_value();
 		}
 		var rand_i = this.randomize_first_hop(hops.length); /* if all possibilities are equal do random */
-		best_hop = hops[rand_i];
+		this.best_hop = hops[rand_i];
 
 		var best_hop_value = 9999;
 		var best_best_hop_value = 9998;
